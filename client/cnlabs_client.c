@@ -82,11 +82,24 @@ int ParseCommandInput ( char* UserInput )
         strcpy (UserInput, Packet);
         return 1;
     }
-        if ( (UserInput [0] == 'R' || UserInput [0] == 'r') &&
+    if ( (UserInput [0] == 'R' || UserInput [0] == 'r') &&
             (UserInput [1] == 'O' || UserInput [1] == 'o') &&
             (UserInput [2] == 'O' || UserInput [2] == 'o') &&
             (UserInput [3] == 'M' || UserInput [3] == 'm') &&
             (UserInput [4] == 'S' || UserInput [4] == 's') )
+    {
+        strcpy (Packet, UserInput);
+        MarshalPacket (Packet);
+        strcpy (UserInput, Packet);
+        return 1;
+    }
+    /*
+    Þinutës raðymas pokalbio kambaryje
+    -m tekstas
+    */
+    if ( (UserInput [0] == '-' || UserInput [0] == '-') &&
+            (UserInput [1] == 'M' || UserInput [1] == 'm') &&
+            (UserInput [2] == ' ' || UserInput [2] == ' ') )
     {
         strcpy (Packet, UserInput);
         MarshalPacket (Packet);
@@ -108,6 +121,7 @@ int ParseCommandInput ( char* UserInput )
         printf("setn vardas - nustatyti savo varda sistemoje\n");
         printf("join id     - kanalo numeris prie kurio norima prisijungti\n");
         printf("rooms       - rodyti visu kanalu informacija\n");
+        printf("-m tekstas  - þinutës raðymas pokalbio kambario lange\n");
         printf("------\n\n");
         return 3;
     }

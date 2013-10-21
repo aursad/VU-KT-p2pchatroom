@@ -181,7 +181,18 @@ if ( ReceiveResult == 1 ){
         if ( 1 == ParseResult )
         {
           if (SOCKET_ERROR == SendPacket(&ClientSockDesc, Command, strlen(Command))) {
-                printf("CNLabs Client error: data transmission to the server failed.\n");
+                printf("CNLabs Server error: nepyko issiusti duomenu klientui.\n");
+            }
+        }
+        // Siunciamos zinutes visiems pokalbio dalyviams
+        if ( 3 == ParseResult )
+        {
+            int OCount;
+            int KanaloId = client->id_channel;
+            for(OCount=0;OCount<room[KanaloId].online;OCount++) {
+                if (SOCKET_ERROR == SendPacket(&room[KanaloId].people[OCount], Command, strlen(Command))) {
+                printf("CNLabs Server error: negaliu issiusti pranesimo pokalbio dalyviams.\n");
+            }
             }
         }
 

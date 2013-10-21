@@ -142,6 +142,23 @@ int ParseCommandInput ( char* UserInput, struct s_user *user )
         strcpy (UserInput, Packet);
         return 1;
     }
+    if ( (UserInput [0] == '-' || UserInput [0] == '-') &&
+            (UserInput [1] == 'M' || UserInput [1] == 'm') &&
+            (UserInput [2] == ' ' || UserInput [2] == ' ') )
+    {
+        //strcpy (Packet, "System >>");
+        //strcat(Packet, UserInput+3);
+        if(user->id_channel >= 0) {
+            strcpy(Packet, user->name);
+            strcat(Packet, ": ");
+            strcat(Packet, UserInput+3);
+        } else {
+            strcpy(Packet, "System >> Turite prisijungti prie kanalo!\n");
+        }
+        MarshalPacket (Packet);
+        strcpy (UserInput, Packet);
+        return 3;
+    }
     if ( (UserInput [0] == 'J' || UserInput [0] == 'j') &&
             (UserInput [1] == 'O' || UserInput [1] == 'o') &&
             (UserInput [2] == 'I' || UserInput [2] == 'i') &&
