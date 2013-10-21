@@ -1,7 +1,7 @@
 //Ausra Sakalauskaite, PS'5
 
 #include	"cnlabs-server3.h"
-
+struct s_user *client;
 
 SOCKET InitializeServer ( void )
 {
@@ -100,12 +100,14 @@ SOCKET InitializeServer ( void )
     //isveda pranesima apie nauja prisijungima serveryje ir matom is kur prisijunge klientas
     //inet_ntoa- konvertuoja adresa i ASCII koda
     printf ("Server: new connection from \'%s\' accepted successfully.\n", inet_ntoa (RemoteAddress.sin_addr));
-    first_login(NewConnectionDesc);
+    client = client_create("Klientas", NewConnectionDesc);
+    //first_login(NewConnectionDesc);
     //gaunama info apie klienta, jei neiseina, tai uzdarom naujai sukurta soketa
     if ( NULL == (HostEntry = gethostbyaddr ((void*)&(RemoteAddress.sin_addr), sizeof (RemoteAddress.sin_addr), AF_INET)) )
 	{
        closesocket (NewConnectionDesc);
        printf ("Server: new connection from \'%s\' was immediately closed because of gethostbyaddr() failure.\n");
+       client_destroy(client);
        return SOCKET_ERROR;
     }
 
@@ -124,6 +126,7 @@ SOCKET InitializeServer ( void )
     if ( SOCKET_ERROR == SendPacket (&NewConnectionDesc, Buffer, strlen (Buffer)) ){
         closesocket (NewConnectionDesc);
         printf ("Server: new connection from \'%s\' was immediately closed because of send() failure.\n");
+        client_destroy(client);
         return SOCKET_ERROR;
    }
 
@@ -155,7 +158,8 @@ ReceiveResult = ReceivePacket (&ClientSockDesc, Command);
 
 //atliekam veiksmus pagal gavimo funkcijos pranesta rezultata. Jei gautas pranesimas, kad rysys nutrauktas -isveda pranesima
 if ( ReceiveResult == 0 ){
-    printf ("Server: client at socket %d has quit the connection.\n", ClientSockDesc);
+    printf ("Server: client \'%s\' has quit the connection.\n", client->name);
+    client_destroy(client);
     closesocket (ClientSockDesc);
     FD_CLR (ClientSockDesc, MainSocketSet);
 }
@@ -172,67 +176,19 @@ if ( ReceiveResult == SOCKET_ERROR ){
 if ( ReceiveResult == 1 ){
         UnmarshalPacket(Command);
         Command [strlen (Command)] = '\0';
-        ParseResult = ParseCommandInput (Command, user, room);
+        ParseResult = ParseCommandInput (Command, client);
 
         if ( 1 == ParseResult )
-        { /*
-            printf("    RECEIVE PACKET  : \'%s\'\n", Command);
-            UnmarshalPacket(Command);
-            printf("    UNMARCHAL ANSWER         : \'%s\'\n", Command);
-            MarshalPacket(Command);
-*/
-      if (SOCKET_ERROR == SendPacket(&ClientSockDesc, Command, strlen(Command))) {
-            printf("CNLabs Client error: data transmission to the server failed.\n");
-
-        }
+        {
+          if (SOCKET_ERROR == SendPacket(&ClientSockDesc, Command, strlen(Command))) {
+                printf("CNLabs Client error: data transmission to the server failed.\n");
+            }
         }
 
      printf ("Server: data reception from client was successful at socket %d.\n", ClientSockDesc);
 }
  }
-int join_room(int ID)
-{
-    if(ID && (ID < CHATROOMS) && (ID >= 0)) {
-        user.id_channel = ID;
-        room[ID].online += 1;
-        return 1;
-    } else {
-        return 0;
-    }
-}
-void first_login(int id_socket) {
-    user.socket = id_socket;
-    user.id_channel = -1;
-}
 
-void create_rooms()
-{
-    strcpy(room[0].title,"Baras");
-    strcpy(room[0].desc,"Bendras pokalbiu kamabarys");
-    room[0].online = 0;
-    room[0].id = 0;
-
-    strcpy(room[1].title,"Baras 2");
-    strcpy(room[1].desc,"Bendras pokalbiu kamabarys");
-    room[1].online = 0;
-    room[1].id = 1;
-
-    strcpy(room[2].title,"Baras 3");
-    strcpy(room[2].desc,"Bendras pokalbiu kamabarys");
-    room[2].online = 0;
-    room[2].id = 2;
-
-    strcpy(room[3].title,"Baras 4");
-    strcpy(room[3].desc,"Bendras pokalbiu kamabarys");
-    room[3].online = 0;
-    room[3].id = 3;
-
-    strcpy(room[4].title,"Baras 5");
-    strcpy(room[4].desc,"Bendras pokalbiu kamabarys");
-    room[4].online = 0;
-    room[4].id = 4;
-    printf("CHATSYSTEM >> Rooms created!\n");
-}
 
 
 

@@ -10,7 +10,7 @@
 	<string.h>
 	<stdlib.h>
 
-1381936504 source:d:\dropbox\myuniversity\kompiuteriø tinklai\iii mini\client\cnlabs_client.c
+1381937784 source:d:\dropbox\myuniversity\kompiuteriø tinklai\iii mini\client\cnlabs_client.c
 	"cnlabs_client.h"
 
 1381319890 d:\dropbox\myuniversity\kompiuteriø tinklai\iii mini\client\cnlabs_client.h
@@ -19,7 +19,7 @@
 1381937383 source:d:\dropbox\myuniversity\kompiuteriø tinklai\iii mini\client\cnlabs_client_drv.c
 	"cnlabs_client.h"
 
-1381935665 d:\dropbox\myuniversity\kompiuteriø tinklai\iii mini\cnlabs-common3.h
+1381939728 d:\dropbox\myuniversity\kompiuteriø tinklai\iii mini\cnlabs-common3.h
 	<windows.h>
 	<winsock2.h>
 	<time.h>

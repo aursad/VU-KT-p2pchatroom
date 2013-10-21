@@ -9,6 +9,7 @@
 #include	<stdio.h>
 #include	<string.h>
 #include	<stdlib.h>
+#include <assert.h>
 
 //Konstantos.
 #define SERVER_PORT 1000
@@ -23,7 +24,7 @@ int ReceivePacket ( SOCKET* s, char* Packet);
 
 /* STRUKTÛROS */
 struct s_user{                     /* the structure type of user */
-    char name[20];             /* user name */
+    char *name;             /* user name */
     int socket;             /* user adress socket */
     int id_channel;                    /* channel  */
 };
@@ -36,7 +37,5 @@ struct s_room{
 struct s_user user;           /* define the structure */
 struct s_room room[CHATROOMS];
 /* FUNKCIJOS */
-void show_name();  /* function prototype */
-void first_login();
-int set_user_name(char name[20]);
+
 #endif

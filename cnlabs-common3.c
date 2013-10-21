@@ -101,7 +101,7 @@ int ReceivePacket ( SOCKET* s, char* Packet){
     //grazina sekmes koda
     return 1;
 }
-int ParseCommandInput ( char* UserInput, struct s_user user )
+int ParseCommandInput ( char* UserInput, struct s_user *user )
 {
     char Packet [2000] = {0}; // Buferis, skirtas saugoti PDU po atpazintos komandos.
     if ( (UserInput [0] == 'S' || UserInput [0] == 's') &&
@@ -111,9 +111,10 @@ int ParseCommandInput ( char* UserInput, struct s_user user )
             (UserInput [4] == ' ') )
     {
         strcpy (Packet, UserInput+5);
-        //printf ("Jusu vardas dabar: \'%s\'\n", Packet);
-        set_user_name(UserInput+5);
-        strcpy (Packet, "System >> Jusu naujas vardas - ");
+        strcpy (Packet, "System >> ");
+        strcat(Packet, user->name);
+        client_change_name(user, UserInput+5);
+        strcat(Packet, " jusu vardas pakeistas i - ");
         strcat(Packet, UserInput+5);
         MarshalPacket (Packet);
         strcpy (UserInput, Packet);
@@ -155,12 +156,56 @@ int ParseCommandInput ( char* UserInput, struct s_user user )
     }
     return 0;
 }
-int set_user_name(char name[20])
+int join_room(int ID)
 {
-    if(name != "") {
-        strcpy(user.name, name);
+    if(ID && (ID < CHATROOMS) && (ID >= 0)) {
+        user.id_channel = ID;
+        room[ID].online += 1;
         return 1;
     } else {
         return 0;
     }
+}
+struct s_user *client_create(char *name, int id_socket)
+{
+    struct s_user *who = malloc(sizeof(struct s_user));
+    assert(who != NULL);
+
+    who->name = strdup(name);
+    who->socket = id_socket;
+
+    return who;
+}
+void client_destroy(struct s_user *who)
+{
+    assert(who != NULL);
+
+    free(who->name);
+    free(who);
+}
+void client_change_name(struct s_user *who, char *name)
+{
+    who->name = strdup(name);
+}
+void client_print(struct s_user *who)
+{
+    printf("Name: %s\n", who->name);
+    printf("\tSocket: %d\n", who->socket);
+    printf("\tRoom: %d\n", who->id_channel);
+}
+void create_rooms()
+{
+    create_room("Baras", "Test", 0);
+    create_room("Baras 2", "Bendras pokalbiu kamabarys", 1);
+    create_room("Baras 3", "Bendras pokalbiu kamabarys", 2);
+    create_room("Baras 4", "Bendras pokalbiu kamabarys", 3);
+    create_room("Baras 5", "Bendras pokalbiu kamabarys", 4);
+    printf("CHATSYSTEM >> Rooms created!\n");
+}
+void create_room(char *title, char *desc, int id)
+{
+    strcpy(room[id].title, strdup(title));
+    strcpy(room[id].desc, strdup(desc));
+    room[id].online = 0;
+    room[id].id = id;
 }
