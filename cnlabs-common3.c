@@ -130,14 +130,45 @@ int ParseCommandInput ( char* UserInput, struct s_user *user )
             (UserInput [3] == 'M' || UserInput [3] == 'm') &&
             (UserInput [4] == 'S' || UserInput [4] == 's') )
     {
-        int n;
-        char ids, o;
         strcpy (Packet, "System >>");
+        int n;
         for(n=0;n<5;n++)
         {
             strcat(Packet, room[n].title);
             strcat(Packet, " - ");
             strcat(Packet, room[n].desc);
+        }
+        MarshalPacket (Packet);
+        strcpy (UserInput, Packet);
+        return 1;
+    }
+    if ( (UserInput [0] == 'J' || UserInput [0] == 'j') &&
+            (UserInput [1] == 'O' || UserInput [1] == 'o') &&
+            (UserInput [2] == 'I' || UserInput [2] == 'i') &&
+            (UserInput [3] == 'N' || UserInput [3] == 'n') &&
+            (UserInput [4] == ' ') )
+    {
+        strcpy (Packet, UserInput+5);
+        int room_id = strtoint(UserInput+5);
+        strcpy (Packet, "System >> ");
+        if(room_id < CHATROOMS && room_id >= 0)
+        {
+            if(room[room_id].online < CHATMEMBERS)
+            {
+                if(user->id_channel != room_id) {
+                    user->id_channel = room_id;
+                    room[room_id].people[room[room_id].online] = user->socket;
+                    room[room_id].online += 1;
+                    strcat(Packet, "Sekmingai prisijungta prie kanalo!");
+                } else {
+                    strcat(Packet, "Esate prisijunges prie sio kanalo!");
+                }
+            } else {
+                strcat(Packet, "Kanale per daug zmoniu!");
+            }
+        } else
+        {
+            strcat(Packet, "Toks kanalas nerastas!");
         }
         MarshalPacket (Packet);
         strcpy (UserInput, Packet);
@@ -155,16 +186,6 @@ int ParseCommandInput ( char* UserInput, struct s_user *user )
         return 0;
     }
     return 0;
-}
-int join_room(int ID)
-{
-    if(ID && (ID < CHATROOMS) && (ID >= 0)) {
-        user.id_channel = ID;
-        room[ID].online += 1;
-        return 1;
-    } else {
-        return 0;
-    }
 }
 struct s_user *client_create(char *name, int id_socket)
 {
@@ -195,17 +216,53 @@ void client_print(struct s_user *who)
 }
 void create_rooms()
 {
-    create_room("Baras", "Test", 0);
-    create_room("Baras 2", "Bendras pokalbiu kamabarys", 1);
-    create_room("Baras 3", "Bendras pokalbiu kamabarys", 2);
-    create_room("Baras 4", "Bendras pokalbiu kamabarys", 3);
-    create_room("Baras 5", "Bendras pokalbiu kamabarys", 4);
+    create_room("Baras", "Test", 0, 0);
+    create_room("Baras 2", "Bendras pokalbiu kamabarys", 5, 1);
+    create_room("Baras 3", "Bendras pokalbiu kamabarys", 0, 2);
+    create_room("Baras 4", "Bendras pokalbiu kamabarys", 0, 3);
+    create_room("Baras 5", "Bendras pokalbiu kamabarys", 0, 4);
     printf("CHATSYSTEM >> Rooms created!\n");
 }
-void create_room(char *title, char *desc, int id)
+void create_room(char *title, char *desc, int online, int id)
 {
     strcpy(room[id].title, strdup(title));
     strcpy(room[id].desc, strdup(desc));
-    room[id].online = 0;
+    room[id].online = online;
     room[id].id = id;
+}
+int strtoint_n(char* str, int n)
+{
+    int sign = 1;
+    int place = 1;
+    int ret = 0;
+
+    int i;
+    for (i = n-1; i >= 0; i--, place *= 10)
+    {
+        int c = str[i];
+        switch (c)
+        {
+            case 45:
+                if (i == 0) sign = -1;
+                else return -1;
+                break;
+            default:
+                if (c >= 48 && c <= 57) ret += (c - 48) * place;
+                else return -1;
+        }
+    }
+
+    return sign * ret;
+}
+
+int strtoint(char* str)
+{
+    char* temp = str;
+    int n = 0;
+    while (*temp != '\0')
+    {
+        n++;
+        temp++;
+    }
+    return strtoint_n(str, n);
 }

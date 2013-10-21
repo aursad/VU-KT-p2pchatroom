@@ -14,7 +14,7 @@
 //Konstantos.
 #define SERVER_PORT 1000
 #define MAX_QUEUE_LENGTH 5
-#define CHATMEMBERS 10
+#define CHATMEMBERS 5
 #define CHATROOMS 5
 
 void MarshalPacket ( char* Packet );
@@ -33,6 +33,7 @@ struct s_room{
     char title[20]; // Chatroom name
     char desc[50]; // Room desc
     int online; // Number online people
+    int people[5]; // list online people
 };
 struct s_user user;           /* define the structure */
 struct s_room room[CHATROOMS];
