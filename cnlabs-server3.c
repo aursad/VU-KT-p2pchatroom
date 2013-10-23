@@ -190,12 +190,16 @@ if ( ReceiveResult == 1 ){
             int OCount;
             int KanaloId = client->id_channel;
             for(OCount=0;OCount<room[KanaloId].online;OCount++) {
+                    if(room[KanaloId].people[OCount] != client->socket){
                 if (SOCKET_ERROR == SendPacket(&room[KanaloId].people[OCount], Command, strlen(Command))) {
                 printf("CNLabs Server error: negaliu issiusti pranesimo pokalbio dalyviams.\n");
+            } else {
+                printf("CNLabs server chat: zinute \'%s\' isiusta is %d i %d.\n", Command, client->socket, room[KanaloId].people[OCount]);
+                continue;
             }
             }
         }
-
+        }
      printf ("Server: data reception from client was successful at socket %d.\n", ClientSockDesc);
 }
  }
