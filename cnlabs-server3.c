@@ -71,8 +71,7 @@ SOCKET InitializeServer ( void )
             return INVALID_SOCKET;
         }
         printf ("Server: started successfully on host \'%s\' - (%s).\n", cServerHostName, inet_ntoa (*(struct in_addr *)ptrServerHostEntry->h_addr) );
-        create_rooms();
-
+        create_room("Baras", "Test", 0, 0);
 	return ServerSockDesc;
 }
 
@@ -100,8 +99,9 @@ SOCKET InitializeServer ( void )
     //isveda pranesima apie nauja prisijungima serveryje ir matom is kur prisijunge klientas
     //inet_ntoa- konvertuoja adresa i ASCII koda
     printf ("Server: new connection from \'%s\' accepted successfully.\n", inet_ntoa (RemoteAddress.sin_addr));
-    client = client_create("Klientas", NewConnectionDesc);
-    //first_login(NewConnectionDesc);
+
+    client_create("Klientas", NewConnectionDesc);
+
     //gaunama info apie klienta, jei neiseina, tai uzdarom naujai sukurta soketa
     if ( NULL == (HostEntry = gethostbyaddr ((void*)&(RemoteAddress.sin_addr), sizeof (RemoteAddress.sin_addr), AF_INET)) )
 	{
@@ -158,8 +158,10 @@ ReceiveResult = ReceivePacket (&ClientSockDesc, Command);
 
 //atliekam veiksmus pagal gavimo funkcijos pranesta rezultata. Jei gautas pranesimas, kad rysys nutrauktas -isveda pranesima
 if ( ReceiveResult == 0 ){
-    printf ("Server: client \'%s\' has quit the connection.\n", client->name);
-    client_destroy(client);
+    printf ("Server: client \'%d\' has quit the connection.\n", ClientSockDesc);
+
+    client_destroy();
+
     closesocket (ClientSockDesc);
     FD_CLR (ClientSockDesc, MainSocketSet);
 }
@@ -176,7 +178,7 @@ if ( ReceiveResult == SOCKET_ERROR ){
 if ( ReceiveResult == 1 ){
         UnmarshalPacket(Command);
         Command [strlen (Command)] = '\0';
-        ParseResult = ParseCommandInput (Command, client);
+        ParseResult = ParseCommandInput (Command, ClientSockDesc);
 
         if ( 1 == ParseResult )
         {
@@ -187,18 +189,20 @@ if ( ReceiveResult == 1 ){
         // Siunciamos zinutes visiems pokalbio dalyviams
         if ( 3 == ParseResult )
         {
-            int OCount;
-            int KanaloId = client->id_channel;
-            for(OCount=0;OCount<room[KanaloId].online;OCount++) {
-                    if(room[KanaloId].people[OCount] != client->socket){
-                if (SOCKET_ERROR == SendPacket(&room[KanaloId].people[OCount], Command, strlen(Command))) {
-                printf("CNLabs Server error: negaliu issiusti pranesimo pokalbio dalyviams.\n");
-            } else {
-                printf("CNLabs server chat: zinute \'%s\' isiusta is %d i %d.\n", Command, client->socket, room[KanaloId].people[OCount]);
+            int i;
+            for(i=0;i<room[0].online;i++)
+            {
+                if(members[i].socket != ClientSockDesc)
+                {
+                    if (SOCKET_ERROR == SendPacket(&members[i].socket, Command, strlen(Command)))
+                    {
+                        printf("CNLabs Server error: negaliu issiusti pranesimo pokalbio dalyviams.\n");
+                    } else {
+                        printf("CNLabs server chat: zinute \'%s\' isiusta is %d i %d.\n", Command, ClientSockDesc, members[i].socket);
                 continue;
+                    }
+                }
             }
-            }
-        }
         }
      printf ("Server: data reception from client was successful at socket %d.\n", ClientSockDesc);
 }

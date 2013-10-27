@@ -14,7 +14,7 @@
 //Konstantos.
 #define SERVER_PORT 1000
 #define MAX_QUEUE_LENGTH 5
-#define CHATMEMBERS 5
+#define CHATMEMBERS 85
 #define CHATROOMS 5
 
 void MarshalPacket ( char* Packet );
@@ -26,7 +26,7 @@ int ReceivePacket ( SOCKET* s, char* Packet);
 struct s_user{                     /* the structure type of user */
     char *name;             /* user name */
     int socket;             /* user adress socket */
-    int id_channel;                    /* channel  */
+    int some;                    /* channel  */
 };
 struct s_room{
     int id;
@@ -35,8 +35,8 @@ struct s_room{
     int online; // Number online people
     int people[5]; // list online people
 };
-struct s_user user;           /* define the structure */
-struct s_room room[CHATROOMS];
+struct s_user members[CHATMEMBERS];           /* define the structure */
+struct s_room room[1];
 /* FUNKCIJOS */
 
 #endif

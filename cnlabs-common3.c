@@ -101,7 +101,7 @@ int ReceivePacket ( SOCKET* s, char* Packet){
     //grazina sekmes koda
     return 1;
 }
-int ParseCommandInput ( char* UserInput, struct s_user *user )
+int ParseCommandInput ( char* UserInput, int id_socket )
 {
     char Packet [2000] = {0}; // Buferis, skirtas saugoti PDU po atpazintos komandos.
     if ( (UserInput [0] == 'S' || UserInput [0] == 's') &&
@@ -110,10 +110,14 @@ int ParseCommandInput ( char* UserInput, struct s_user *user )
             (UserInput [3] == 'N' || UserInput [3] == 'n') &&
             (UserInput [4] == ' ') )
     {
+        int ids;
+        ids = search_member(id_socket);
         strcpy (Packet, UserInput+5);
         strcpy (Packet, "System >> ");
-        strcat(Packet, user->name);
-        client_change_name(user, UserInput+5);
+//        strcat(Packet, strdup(members[ids].name);
+
+        client_change_name(id_socket, UserInput+5);
+
         strcat(Packet, " jusu vardas pakeistas i - ");
         strcat(Packet, UserInput+5);
         MarshalPacket (Packet);
@@ -124,19 +128,21 @@ int ParseCommandInput ( char* UserInput, struct s_user *user )
     Prisijungimas prie kanalo
     ROOMS
      */
-    if ( (UserInput [0] == 'R' || UserInput [0] == 'r') &&
-            (UserInput [1] == 'O' || UserInput [1] == 'o') &&
-            (UserInput [2] == 'O' || UserInput [2] == 'o') &&
-            (UserInput [3] == 'M' || UserInput [3] == 'm') &&
-            (UserInput [4] == 'S' || UserInput [4] == 's') )
+    if ( (UserInput [0] == 'O' || UserInput [0] == 'o') &&
+            (UserInput [1] == 'N' || UserInput [1] == 'n') &&
+            (UserInput [2] == 'L' || UserInput [2] == 'l') &&
+            (UserInput [3] == 'I' || UserInput [3] == 'i') &&
+            (UserInput [4] == 'N' || UserInput [4] == 'n') &&
+            (UserInput [5] == 'E' || UserInput [5] == 'e') )
     {
-        strcpy (Packet, "System >>");
+        strcpy (Packet, "System >> Prisijunge dabar: ");
+        strcat(Packet, room[0].online);
+        strcat(Packet, " | ");
         int n;
-        for(n=0;n<5;n++)
+        for(n=0;n<room[0].online;n++)
         {
-            strcat(Packet, room[n].title);
+//            strcat(Packet, members[n].name);
             strcat(Packet, " - ");
-            strcat(Packet, room[n].desc);
         }
         MarshalPacket (Packet);
         strcpy (UserInput, Packet);
@@ -148,48 +154,14 @@ int ParseCommandInput ( char* UserInput, struct s_user *user )
     {
         //strcpy (Packet, "System >>");
         //strcat(Packet, UserInput+3);
-        if(user->id_channel >= 0) {
-            strcpy(Packet, user->name);
+        int ids;
+            ids = search_member(id_socket);
+            strcpy(Packet, members[ids].name);
             strcat(Packet, ": ");
             strcat(Packet, UserInput+3);
-        } else {
-            strcpy(Packet, "System >> Turite prisijungti prie kanalo!\n");
-        }
         MarshalPacket (Packet);
         strcpy (UserInput, Packet);
         return 3;
-    }
-    if ( (UserInput [0] == 'J' || UserInput [0] == 'j') &&
-            (UserInput [1] == 'O' || UserInput [1] == 'o') &&
-            (UserInput [2] == 'I' || UserInput [2] == 'i') &&
-            (UserInput [3] == 'N' || UserInput [3] == 'n') &&
-            (UserInput [4] == ' ') )
-    {
-        strcpy (Packet, UserInput+5);
-        int room_id = strtoint(UserInput+5);
-        strcpy (Packet, "System >> ");
-        if(room_id < CHATROOMS && room_id >= 0)
-        {
-            if(room[room_id].online < CHATMEMBERS)
-            {
-                if(user->id_channel != room_id) {
-                    user->id_channel = room_id;
-                    room[room_id].people[room[room_id].online] = user->socket;
-                    room[room_id].online += 1;
-                    strcat(Packet, "Sekmingai prisijungta prie kanalo!");
-                } else {
-                    strcat(Packet, "Esate prisijunges prie sio kanalo!");
-                }
-            } else {
-                strcat(Packet, "Kanale per daug zmoniu!");
-            }
-        } else
-        {
-            strcat(Packet, "Toks kanalas nerastas!");
-        }
-        MarshalPacket (Packet);
-        strcpy (UserInput, Packet);
-        return 1;
     }
     else if ( 0 == strcmp (UserInput, "QUIT") )
     {
@@ -204,48 +176,43 @@ int ParseCommandInput ( char* UserInput, struct s_user *user )
     }
     return 0;
 }
-struct s_user *client_create(char *name, int id_socket)
-{
-    struct s_user *who = malloc(sizeof(struct s_user));
-    assert(who != NULL);
-
-    who->name = strdup(name);
-    who->socket = id_socket;
-
-    return who;
-}
-void client_destroy(struct s_user *who)
-{
-    assert(who != NULL);
-
-    free(who->name);
-    free(who);
-}
-void client_change_name(struct s_user *who, char *name)
-{
-    who->name = strdup(name);
-}
-void client_print(struct s_user *who)
-{
-    printf("Name: %s\n", who->name);
-    printf("\tSocket: %d\n", who->socket);
-    printf("\tRoom: %d\n", who->id_channel);
-}
-void create_rooms()
-{
-    create_room("Baras", "Test", 0, 0);
-    create_room("Baras 2", "Bendras pokalbiu kamabarys", 5, 1);
-    create_room("Baras 3", "Bendras pokalbiu kamabarys", 0, 2);
-    create_room("Baras 4", "Bendras pokalbiu kamabarys", 0, 3);
-    create_room("Baras 5", "Bendras pokalbiu kamabarys", 0, 4);
-    printf("CHATSYSTEM >> Rooms created!\n");
-}
 void create_room(char *title, char *desc, int online, int id)
 {
     strcpy(room[id].title, strdup(title));
     strcpy(room[id].desc, strdup(desc));
     room[id].online = online;
     room[id].id = id;
+    printf("ChatSystem >>> Pokalbiu kambarys sukurtas");
+}
+void client_create(char *name, int id_socket)
+{
+    int ids;
+    room[0].online += 1;
+    ids = room[0].online-1;
+    members[ids].name = strdup(name);
+    members[ids].socket = id_socket;
+}
+void client_destroy()
+{
+    room[0].online -= 1;
+}
+void client_change_name(int id_socket, char *name)
+{
+    int id;
+    id = search_member(id_socket);
+    members[id].name = strdup(name);
+}
+int search_member(int id_socket)
+{
+    int i = 0;
+    for(i=0;i<room[0].online;i++)
+    {
+      if(members[i].socket == id_socket)
+      {
+          return i;
+          break;
+      }
+    }
 }
 int strtoint_n(char* str, int n)
 {
