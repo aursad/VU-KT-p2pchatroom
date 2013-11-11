@@ -1,85 +1,80 @@
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <strings.h>
-
+#include "cnlabs_client.h"
 #include <unistd.h>
+#include <stdio.h>
+#include <fcntl.h>
+#define BUFFLEN 1024
 
-#define MAXLINE 4096
-#define max(a,b)	((a) > (b) ? (a) : (b))
-
-void client_chat(FILE *fp, int sockfd)
+int main(void)
 {
-	int 	maxfdp1, stdineof, i;
-	fd_set	rset;
-	char	buf[MAXLINE];
-	int 	n;
-	char    nickname[255];
-	char    lines[1024];
+  SOCKET ClientSockDesc;       // Kliento pagrindinio soketo-klausytojo deskriptorius.
+    char UserInput [2000] = {0}; // Masyvas vartotojo komandoms nuskaityti.
+    int SendResult;              // Siuntimo funkcijos resultatui saugoti.
+    int ReceiveResult;              // Siuntimo funkcijos resultatui saugoti.
+    char Packet [2000] = {0};    // Buferiu masyvas duomenims gauti.
+    int iCounter, jCounter;      // Skaitliukai.
+    unsigned int ParseResult;    // Komandu analizes rezultatui saugoti.
 
-	stdineof = 0;
-	FD_ZERO(&rset);
-	printf("what's your name?");
-    	scanf("%s",nickname);
-	for ( ; ; )
-	{
-		if (stdineof == 0)
-			FD_SET(fileno(fp), &rset);
-		FD_SET(sockfd, &rset);
-		maxfdp1 = max(fileno(fp), sockfd) + 1;
-		select(maxfdp1, &rset, NULL, NULL, NULL);
+    fd_set read_set; //pagrindine soketu aibe; soketu aibe, kuri turi duomenu, paruostu nuskaitymui
+    char recvbuffer[BUFFLEN];
+    char sendbuffer[BUFFLEN];
+     int s_socket, i;
 
+    WSADATA wsaData;
+    if(WSAStartup(0x202, &wsaData) == 0)
+    {
+    }
+    else
+    {
+        printf("ERROR: Initialization failure.\n");
+    }
 
-		if (FD_ISSET(sockfd, &rset))
-		{
-			if ((n = read(sockfd, buf, MAXLINE)) == 0)
-			{
-				if (stdineof == 1)
-					return;
-				else
-				{
-					printf("client_chat: server terminated...\n");
-					exit(1);
-				}
-			}
-			write(fileno(stdout), buf, n);
-		}
+    if ( INVALID_SOCKET == (ClientSockDesc = InitializeClient ()) )
+    {
+        printf ("CNLabs Client error: client initialization failed.\n");
+        goto EXIT;
+    }
 
-		if (FD_ISSET(fileno(fp), &rset))
-		{
-			if ((n = read(fileno(fp), buf, MAXLINE)) == 0)
-			{
-				stdineof = 1;
-				shutdown(sockfd, SHUT_WR);
-				FD_CLR(fileno(fp), &rset);
-				continue;
-			}
-			write(sockfd, buf, n);
-		}
-	}
-}
+    memset(&sendbuffer,0,BUFFLEN);
+    //fcntl(0,F_SETFL,fcntl(0,F_GETFL,0)|O_NONBLOCK);
+    //fseek(ClientSockDesc, 0L, SEEK_END);
+   u_long r = 1;
+    iCounter = 0;
+   if( ioctlsocket(0, FIONBIO, &r ) == SOCKET_ERROR )
+   {
+      perror( "imc_connect: ioctlsocket failed" );
+   }
+    while ( 1 )
+    {
+        FD_ZERO(&read_set);
+        FD_SET(ClientSockDesc,&read_set);
+        FD_SET(0,&read_set);
+        s_socket = ClientSockDesc;
+        select(iCounter+1,&read_set,NULL,NULL,NULL);
 
-int main(int argc, char **argv)
-{
-	int sockfd;
-	struct sockaddr_in servaddr;
+        if (FD_ISSET(iCounter, &read_set)){
+            memset(&recvbuffer,0,BUFFLEN);
+            i = read(iCounter, &recvbuffer, BUFFLEN);
+            //i = recv(s_socket,&recvbuffer,BUFFLEN,0);
+            printf("%s \n",recvbuffer);
+            printf("i: %d\n", i);
+            iCounter++;
+        }
+        else if (FD_ISSET(0,&read_set)) {
+            i = read(0,&sendbuffer,1);
+            //ParseCommandInput (sendbuffer);
+            //MarshalPacket(recvbuffer);
+            SendPacket (&ClientSockDesc, sendbuffer,i);
+        }
+/*
+(SendResult = SendPacket (&ClientSockDesc, UserInput, strlen (UserInput))
+ReceivePacket (&ClientSockDesc, Packet)
+UnmarshalPacket (Packet);
+printf ("%s\n", Packet);
 
-	if (argc != 3)
-	{
-		printf("Usage: %s <IP> <port>\n", argv[0]);
-		exit(1);
-	}
-
-	sockfd = socket(AF_INET, SOCK_STREAM, 0);
-
-	bzero(&servaddr, sizeof(servaddr));
-	servaddr.sin_family = AF_INET;
-	servaddr.sin_port = htons(atoi(argv[2]));
-	inet_pton(AF_INET, argv[1], &servaddr.sin_addr);
-
-	connect(sockfd, (struct sockaddr *)&servaddr, sizeof(servaddr));
-
-	client_chat(stdin, sockfd);
-
-	exit(0);
+                    */
+    }
+    closesocket (ClientSockDesc);
+EXIT:
+    WSACleanup();
+    return 1;
 }
