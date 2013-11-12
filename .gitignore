@@ -8,6 +8,9 @@
 *.so
 *.depend
 *.layout
+*.cbp
+*.win
+*.dev
 # OS generated files #
 ######################
 .objs
