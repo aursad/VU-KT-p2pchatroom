@@ -1,5 +1,3 @@
-//Ausra Sakalauskaite, PS'5
-
 #ifndef CNLABS_SERVER3_H //neleidzia apibrezti 2 header failu
 #define	CNLABS_SERVER3_H
 
@@ -13,12 +11,12 @@
 #include "cnlabs-common3.h"
 
 //Funkciju aprasai-------------------------------------------------------------
-    //Funkciju, inicializuojanciu serverio rutinas, antrastes.
-    SOCKET InitializeServer(void);
-    //Naujo kliento prisijungimo apdorojimo funkcija
-    int HandleNewConnection (SOCKET *ServerSockDesc, unsigned int *MaxKnownSocketDesc, fd_set *MainSocketSet);
-    //esamo kliento uzklausos apdorojimas
-    void HandleDataFromClient (SOCKET ClientSockDesc, fd_set *MainSocketSet);
+//Funkciju, inicializuojanciu serverio rutinas, antrastes.
+SOCKET InitializeServer(void);
+//Naujo kliento prisijungimo apdorojimo funkcija
+int HandleNewConnection (SOCKET *ServerSockDesc, unsigned int *MaxKnownSocketDesc, fd_set *MainSocketSet);
+//esamo kliento uzklausos apdorojimas
+void HandleDataFromClient (SOCKET ClientSockDesc, fd_set *MainSocketSet);
 
 
 #endif	/* HEADER_H */

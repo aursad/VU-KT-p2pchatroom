@@ -1,23 +1,18 @@
 #include "cnlabs_client.h"
-#include <unistd.h>
-#include <stdio.h>
-#include <fcntl.h>
 #define BUFFLEN 1024
-
 int main(void)
 {
-  SOCKET ClientSockDesc;       // Kliento pagrindinio soketo-klausytojo deskriptorius.
-    char UserInput [2000] = {0}; // Masyvas vartotojo komandoms nuskaityti.
+    SOCKET ClientSockDesc;       // Kliento pagrindinio soketo-klausytojo deskriptorius.
+    char UserInput [BUFFLEN] = {0}; // Masyvas vartotojo komandoms nuskaityti.
     int SendResult;              // Siuntimo funkcijos resultatui saugoti.
     int ReceiveResult;              // Siuntimo funkcijos resultatui saugoti.
-    char Packet [2000] = {0};    // Buferiu masyvas duomenims gauti.
-    int iCounter, jCounter;      // Skaitliukai.
+    char Packet [BUFFLEN] = {0};    // Buferiu masyvas duomenims gauti.
+    int jCounter, i;      // Skaitliukai.
     unsigned int ParseResult;    // Komandu analizes rezultatui saugoti.
 
-    fd_set read_set; //pagrindine soketu aibe; soketu aibe, kuri turi duomenu, paruostu nuskaitymui
-    char recvbuffer[BUFFLEN];
-    char sendbuffer[BUFFLEN];
-     int s_socket, i;
+    fd_set MainSocketSet, TempSet; //pagrindine soketu aibe; soketu aibe, kuri turi duomenu, paruostu nuskaitymui
+    unsigned int MaxKnownSocketDesc, iCounter;// maksimalus deskriptoriu kintamasis (soketo nr), skaitliukas (soketè)
+    struct timeval TimeVal; // Laiko struktura dirbti su select().
 
     WSADATA wsaData;
     if(WSAStartup(0x202, &wsaData) == 0)
@@ -33,45 +28,54 @@ int main(void)
         printf ("CNLabs Client error: client initialization failed.\n");
         goto EXIT;
     }
+    // Inicializuoti soketu aibes.
+    FD_ZERO(&MainSocketSet);
+    FD_ZERO(&TempSet);
 
-    memset(&sendbuffer,0,BUFFLEN);
-    //fcntl(0,F_SETFL,fcntl(0,F_GETFL,0)|O_NONBLOCK);
-    //fseek(ClientSockDesc, 0L, SEEK_END);
-   u_long r = 1;
-    iCounter = 0;
-   if( ioctlsocket(0, FIONBIO, &r ) == SOCKET_ERROR )
-   {
-      perror( "imc_connect: ioctlsocket failed" );
-   }
+    // Inicializuojame laiko struktura. 0 - reiskia, kad select() funkcija turi blokuotis laukdama, kol atsiras bent vienas aktyvus soketas.
+    TimeVal.tv_sec = 10; //sekundes
+    TimeVal.tv_usec = 500; //tukstantosios
+
+    FD_SET(ClientSockDesc, &MainSocketSet);
+    MaxKnownSocketDesc = ClientSockDesc;
+
     while ( 1 )
     {
-        FD_ZERO(&read_set);
-        FD_SET(ClientSockDesc,&read_set);
-        FD_SET(0,&read_set);
-        s_socket = ClientSockDesc;
-        select(iCounter+1,&read_set,NULL,NULL,NULL);
+        // Kiekvienoje iteracijoje inicializuokime pagalbine soketu aibe pagrindine.
+        TempSet = MainSocketSet;
 
-        if (FD_ISSET(iCounter, &read_set)){
-            memset(&recvbuffer,0,BUFFLEN);
-            i = read(iCounter, &recvbuffer, BUFFLEN);
-            //i = recv(s_socket,&recvbuffer,BUFFLEN,0);
-            printf("%s \n",recvbuffer);
-            printf("i: %d\n", i);
-            iCounter++;
+        // Isrenkame is soketu aibes tuos deskriptorius, kurie apraso soketus, turincius duomenu, paruostu skaitymui.
+        //select()tinklo primityvo panaudojimas sinchroniniu budu, kada blokuojamasi laukiant aktyviu soketu, turinciu info, kuria per juos galima skaityti is tinklo.
+        //tikrina zemesnius uz pirmuoji nr pazymetus, todel +1, pirmos eiles soketu aibe (2,3 eiles soketu aibe), blokavimas ribota laika
+        if ( SOCKET_ERROR == select (MaxKnownSocketDesc + 1, &TempSet, NULL, NULL, &TimeVal) )
+        {
+            exit(EXIT_FAILURE);
         }
-        else if (FD_ISSET(0,&read_set)) {
-            i = read(0,&sendbuffer,1);
-            //ParseCommandInput (sendbuffer);
-            //MarshalPacket(recvbuffer);
-            SendPacket (&ClientSockDesc, sendbuffer,i);
-        }
-/*
-(SendResult = SendPacket (&ClientSockDesc, UserInput, strlen (UserInput))
-ReceivePacket (&ClientSockDesc, Packet)
-UnmarshalPacket (Packet);
-printf ("%s\n", Packet);
 
-                    */
+        for ( iCounter = 0; iCounter <= MaxKnownSocketDesc; iCounter++ )
+        {
+            if (FD_ISSET(iCounter, &TempSet))
+            {
+                if ( SOCKET_ERROR == ReceivePacket (&ClientSockDesc, Packet) )
+                {
+                    closesocket (ClientSockDesc);
+                    return INVALID_SOCKET;
+                }
+                UnmarshalPacket (Packet);
+                printf ("%s\n", Packet);
+            }
+            else if(FD_ISSET(0, &TempSet))
+            {
+                //fflush ( stdin );
+                memset (UserInput, 0, sizeof (UserInput));
+                fgets (UserInput, sizeof (UserInput), stdin);
+                UserInput [strlen (UserInput) - 1] = '\0';
+                //ParseCommandInput (UserInput);
+                MarshalPacket(UserInput);
+                SendPacket (&ClientSockDesc, UserInput,strlen(UserInput));
+            }
+
+        }
     }
     closesocket (ClientSockDesc);
 EXIT:

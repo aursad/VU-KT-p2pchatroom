@@ -1,5 +1,3 @@
-////Ausra Sakalauskaite, PS'5
-
 #include "cnlabs-server3.h"
 int main(void)
 {
@@ -74,5 +72,5 @@ int main(void)
 
     WSACleanup();
 
-        return 0;
+    return 0;
 }

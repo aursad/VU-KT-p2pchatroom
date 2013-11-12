@@ -1,4 +1,3 @@
-
 #ifndef CNLABS_COMMON3_H
 #define	CNLABS_COMMON3_H
 
